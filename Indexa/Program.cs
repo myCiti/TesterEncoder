@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Device.Gpio;
-using System.Diagnostics;
-using System.Globalization;
 
 namespace Indexa
 {
@@ -13,15 +11,11 @@ namespace Indexa
             // readPin function
             bool readPin(int p) => gpio.Read(p) == PinValue.High;
 
-            int cycleNum = 2_500;
             int cycleCounter = 0;
             int pulseCounter = 0;
             int state = 0;
             double time = 0;
             double slowestTime = 0;
-            double moy = 0;
-            double[] timeTab = new double[10000];
-            int i = 0;
 
             const int indexPin = 4;
             gpio.OpenPin(indexPin, PinMode.Input);
@@ -57,13 +51,7 @@ namespace Indexa
                             {
                                 state = 1;
                                 cycleCounter++;
-                                for (int y = 0; y < i; y++)
-                                {
-                                    moy += timeTab[y];
-                                }
-                                moy /= i;
-                                i = 0;
-                                Console.WriteLine($"Index : {cycleCounter} | pulse : {pulseCounter} | temps moyen : {moy} ms | fréquence la plus lente obtenue dans ce cycle : {1 / slowestTime}");
+                                Console.WriteLine($"Index : {cycleCounter} | pulse : {pulseCounter} | fréquence la plus lente obtenue dans ce cycle (kHz) : {1 / slowestTime}");
                                 pulseCounter = 0;
                             }
                             else if (readPin(pulsePin))
@@ -79,13 +67,7 @@ namespace Indexa
                             {
                                 state = 1;
                                 cycleCounter++;
-                                for (int y = 0; y < 10000; y++)
-                                {
-                                    moy += timeTab[y];
-                                }
-                                moy /= i;
-                                i = 0;
-                                Console.WriteLine($"Index : {cycleCounter} | pulse : {pulseCounter} | temps moyen : {moy} ms | fréquence la plus lente obtenue dans ce cycle : {1 / slowestTime}");
+                                Console.WriteLine($"Index : {cycleCounter} | pulse : {pulseCounter} | fréquence la plus lente obtenue dans ce cycle (kHz) : {0:000.00}", (1 / slowestTime));
                                 pulseCounter = 0;
                             }
                             else if (!readPin(pulsePin))
@@ -102,12 +84,6 @@ namespace Indexa
                 }
                 //saving elapsed time
                 time = watch.Elapsed.TotalMilliseconds;
-                //saving elapsed time in array
-                if (i < 10000)
-                {
-                    timeTab[i++] = time;
-                }
-                
                 watch.Stop();
                 watch = System.Diagnostics.Stopwatch.StartNew();
             }
