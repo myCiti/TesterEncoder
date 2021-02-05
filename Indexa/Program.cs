@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Device.Gpio;
 using System.IO;
-using System.Threading.Tasks;
 
 namespace Indexa
 {
@@ -10,43 +9,54 @@ namespace Indexa
         static void Main(string[] args)
         {
             var gpio = new GpioController();
-            // readPin function
-            //bool readPin(int p) => gpio.Read(p) == PinValue.High;
+            const int indexPin = 4;
+            gpio.OpenPin(indexPin, PinMode.Input);
+            const int pulsePin = 17;
+            gpio.OpenPin(pulsePin, PinMode.Input);
+            const int BlackboxPin = 50;
+            gpio.OpenPin(BlackboxPin, PinMode.Input);
+             
+            //start program
+            #region 
             var path = "Log";
             if (!Directory.Exists(path))
             {
                 Directory.CreateDirectory(path);
             }
-            const int indexPin = 4;
-            gpio.OpenPin(indexPin, PinMode.Input);
-            const int pulsePin = 17;
-            gpio.OpenPin(pulsePin, PinMode.Input);
+            int nbrCycles;
+            Console.WriteLine("En attente de l'utilisateur concernant le nombre de cycles par fichier ainsi que le nombre de fichiers :");
+            Console.WriteLine("Nbr Cycles : ");
+            while ((nbrCycles = Convert.ToInt32(Console.ReadLine())) == 0)
+            {
+                Console.WriteLine("Merci d'écrire un nombre");
+                Console.WriteLine("Nbr Cycles : ");
+            }
+            Console.WriteLine($"Le nombre de cycles à été défini à : {nbrCycles}");
 
-            for (int i = 0; i < 20; i++)
+            int nbrFichiers;
+            Console.WriteLine("Nbr fichiers : ");
+            while ((nbrFichiers = Convert.ToInt32(Console.ReadLine())) == 0)
+            {
+                Console.WriteLine("Merci d'écrire un nombre");
+                Console.WriteLine("Nbr fichiers : ");
+            }
+            Console.WriteLine($"Le nombre de fichiers à été défini à : {nbrFichiers}");
+
+            Console.WriteLine($"Le programme va éxécuter {nbrCycles} de cycles dans {nbrFichiers} de fichiers.");
+            #endregion
+
+            for (int i = 1; i <= nbrFichiers; i++)
             {
                 StreamWriter sw = new StreamWriter($"{path}/ResultOfSimulation#{i}_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
 
                 sw.WriteLine($"SimulationStartAt = {DateTime.Now:yyyyMMdd_HHmmss}");
-                sw.WriteLine("EachLineIsComposedOF:\nIndexCounter,Counter,SlowestSpeed");
-
-                /*StreamWriter sw2 = new StreamWriter($"{path}/DeepIndexAnalysis_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
-
-                sw2.WriteLine($"SimulationTestStartAt = {DateTime.Now:yyyyMMdd_HHmmss}");
-                sw2.WriteLine("EachLineIsComposedOF:\nCounter,SlowestSpeed,Speed,State");*/
+                sw.WriteLine("EachLineIsComposedOF:\nIndexCounter,Counter,StopByIndex, StopByBlackBox");
 
                 int cycleCounter = 0;
                 int pulseCounter = 0;
                 int state = 0;
-                //double time = 0;
-                //double slowestTime = 0;
-                //double[] timeTab = new double[100_000];
-                //int x = 0;
 
-                
-
-                //var watch = System.Diagnostics.Stopwatch.StartNew();
-
-                while (cycleCounter <= 1000)
+                while (cycleCounter <= nbrCycles)
                 {
                     switch (state)
                     {
@@ -71,12 +81,11 @@ namespace Indexa
                             {
                                 if ((int)gpio.Read(indexPin) == 1)
                                 {
-                                    state = 1;
-                                    cycleCounter++;
-                                    //Console.WriteLine($"Index : {cycleCounter} | pulse : {pulseCounter} | fréquence la plus lente obtenue dans ce cycle (kHz) : {1 / slowestTime}");
-                                    sw.WriteLineAsync($"{cycleCounter}, {pulseCounter}");
-                                    //slowestTime = 0;
-                                    pulseCounter = 0;
+                                    EndCycleWithIndex();
+                                }
+                                else if ((int)gpio.Read(BlackboxPin) == 1)
+                                {
+                                    EndCycleWithBlackbox();
                                 }
                                 else if ((int)gpio.Read(pulsePin) == 1)
                                 {
@@ -89,12 +98,11 @@ namespace Indexa
                             {
                                 if ((int)gpio.Read(indexPin) == 1)
                                 {
-                                    state = 1;
-                                    cycleCounter++;
-                                    //Console.WriteLine($"Index : {cycleCounter} | pulse : {pulseCounter} | fréquence la plus lente obtenue dans ce cycle (kHz) : {0:000.00}", (1 / slowestTime));
-                                    sw.WriteLineAsync($"{cycleCounter}, {pulseCounter}");
-                                    //slowestTime = 0;
-                                    pulseCounter = 0;
+                                    EndCycleWithIndex();
+                                }
+                                else if ((int)gpio.Read(BlackboxPin) == 1)
+                                {
+                                    EndCycleWithBlackbox();
                                 }
                                 else if ((int)gpio.Read(pulsePin) == 0)
                                 {
@@ -103,23 +111,30 @@ namespace Indexa
                                 break;
                             }
                     }
-                    /*if (time > slowestTime)
-                    {
-                        slowestTime = time;
-                        //Console.WriteLine($"{1 / slowestTime / 1000}");
-                    }
-                    //saving elapsed time
-                    time = watch.Elapsed.TotalMilliseconds;
-                    sw2.WriteLine($"{cycleCounter}, {pulseCounter}, {state}, {time}");
-                    watch.Stop();
-                    watch = System.Diagnostics.Stopwatch.StartNew();*/
                 }
-                sw.WriteLine($"SimulationEndedAt = {DateTime.Now:yyyyMMdd_HHmmss}");
+                sw.WriteLine($"SimulationEndedAt = {DateTime.Now:yyyyMMdd_HH:mm:ss}");
                 sw.Close();
-                /*sw2.WriteLine($"SimulationEndedAt = {DateTime.Now:yyyyMMdd_HHmmss}");
-                sw2.Close();*/
-                Console.WriteLine($"testEnded#{i}");
+                Console.WriteLine($"Test #{i} terminé");
+
+                void EndCycleWithIndex()
+                {
+                    state = 1;
+                    cycleCounter++;
+                    Console.WriteLine($"Index : {cycleCounter} | pulse : {pulseCounter}");
+                    sw.WriteLineAsync($"{cycleCounter}, {pulseCounter}, 1, 0");
+                    pulseCounter = 0;
+                }
+
+                void EndCycleWithBlackbox()
+                {
+                    state = 1;
+                    cycleCounter++;
+                    Console.WriteLine($"Index : {cycleCounter} | pulse : {pulseCounter}");
+                    sw.WriteLineAsync($"{cycleCounter}, {pulseCounter}, 0, 1");
+                    pulseCounter = 0;
+                }
             }
+            Console.WriteLine("Simulation terminé");
         }
     }
 }
