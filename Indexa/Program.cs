@@ -1,140 +1,231 @@
 ﻿using System;
 using System.Device.Gpio;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Indexa
 {
     class Program
     {
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
+            //GPIO
             var gpio = new GpioController();
             const int indexPin = 4;
             gpio.OpenPin(indexPin, PinMode.Input);
             const int pulsePin = 17;
             gpio.OpenPin(pulsePin, PinMode.Input);
-            const int BlackboxPin = 50;
+            const int BlackboxPin = 27;
             gpio.OpenPin(BlackboxPin, PinMode.Input);
-             
+            const int LimitOpen = 3;
+            gpio.OpenPin(LimitOpen, PinMode.Input);
+            const int LimitClose = 2;
+            gpio.OpenPin(LimitClose, PinMode.Input);
+
             //start program
-            #region 
+            #region startup
+            
+            //creating log folder
             var path = "Log";
             if (!Directory.Exists(path))
             {
                 Directory.CreateDirectory(path);
             }
-            int nbrCycles;
-            Console.WriteLine("En attente de l'utilisateur concernant le nombre de cycles par fichier ainsi que le nombre de fichiers :");
-            Console.WriteLine("Nbr Cycles : ");
-            while ((nbrCycles = Convert.ToInt32(Console.ReadLine())) == 0)
-            {
-                Console.WriteLine("Merci d'écrire un nombre");
-                Console.WriteLine("Nbr Cycles : ");
-            }
-            Console.WriteLine($"Le nombre de cycles à été défini à : {nbrCycles}");
-
-            int nbrFichiers;
-            Console.WriteLine("Nbr fichiers : ");
-            while ((nbrFichiers = Convert.ToInt32(Console.ReadLine())) == 0)
-            {
-                Console.WriteLine("Merci d'écrire un nombre");
-                Console.WriteLine("Nbr fichiers : ");
-            }
-            Console.WriteLine($"Le nombre de fichiers à été défini à : {nbrFichiers}");
-
-            Console.WriteLine($"Le programme va éxécuter {nbrCycles} de cycles dans {nbrFichiers} de fichiers.");
+            //creating a file and saving his name in "date" variable
+            DateTime date;
+            StreamWriter sw = new StreamWriter($"{path}/ResultOfSimulation_{date = DateTime.Now:yyyyMMdd_HHmmss}.csv");
+            //writing to the file the start of the test
+            sw.WriteLine($"SimulationStartAt = {date}");
+            //writing legend to know in each column what variable we saved  
+            sw.WriteLine("EachLineIsComposedOf:\nStopByIndex, StopByBlackBox, IndexCounter, PulseCounter, Direction");
+            //declaration of the variable for the state machine and logic
+            int indexCounter = 0;
+            int pulseCounter = 0;
+            char direction = ' ';
+            int state = 0;
             #endregion
 
-            for (int i = 1; i <= nbrFichiers; i++)
+            //start a new task to get logic working infinitely without freezing the ui
+            Task task = new Task(() => Logic());
+            task.Start();
+            
+            /*
+            Task task2 = new Task(() => Debug());
+            task2.Start();*/
+
+            //stoping message
+            Console.WriteLine("Écrire 'stop' pour arrêter le programme");
+            //while to ask if the user doesn't write stop 
+            while (Console.ReadLine() != "stop")
             {
-                StreamWriter sw = new StreamWriter($"{path}/ResultOfSimulation#{i}_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
+                Console.WriteLine("Commande inconnue");
+                Console.WriteLine("Écrire 'stop' pour arrêter le programme");
+            }
+            //telling when the test ended and closing file
+            sw.WriteLine($"SimulationTestEndedAt = {DateTime.Now:yyyyMMdd_HHmmss}");
+            sw.Close();
+            //closing program
+            return 0;
 
-                sw.WriteLine($"SimulationStartAt = {DateTime.Now:yyyyMMdd_HHmmss}");
-                sw.WriteLine("EachLineIsComposedOF:\nIndexCounter,Counter,StopByIndex, StopByBlackBox");
-
-                int cycleCounter = 0;
-                int pulseCounter = 0;
-                int state = 0;
-
-                while (cycleCounter <= nbrCycles)
+            void Logic()
+            {
+                while (true)
                 {
+                    #region switch logic (state machine)
                     switch (state)
                     {
-                        case 0:
+                        case 0: //waiting for one of two limit to get on to start cycle
                             {
-                                if ((int)gpio.Read(indexPin) == 1)
+                                if (gpio.Read(LimitOpen) == PinValue.Low)
                                 {
+                                    direction = 'v';
+                                    Console.WriteLine("Cycle d'ouverture débuté");
                                     state = 1;
-                                    cycleCounter++;
+                                }
+                                else if (gpio.Read(LimitClose) == PinValue.Low)
+                                {
+                                    direction = '^';
+                                    Console.WriteLine("Cycle de fermeture débuté");
+                                    state = 1;
                                 }
                                 break;
                             }
-                        case 1:
+                        case 1: //waiting for the first index
                             {
-                                if ((int)gpio.Read(indexPin) == 0)
+                                if (gpio.Read(indexPin) == PinValue.High)
                                 {
                                     state = 2;
                                 }
                                 break;
                             }
-                        case 2:
+                        case 2: //waiting for the downing edge of the index input
                             {
-                                if ((int)gpio.Read(indexPin) == 1)
+                                if (gpio.Read(indexPin) == PinValue.Low)
+                                {
+                                    state = 3;
+                                }
+                                break;
+                            }
+                        case 3: //case 3 and 4 count number of index and pulse before blackbox
+                            {
+                                if (gpio.Read(indexPin) == PinValue.High)
                                 {
                                     EndCycleWithIndex();
                                 }
-                                else if ((int)gpio.Read(BlackboxPin) == 1)
+                                else if (gpio.Read(BlackboxPin) == PinValue.Low)
                                 {
                                     EndCycleWithBlackbox();
                                 }
-                                else if ((int)gpio.Read(pulsePin) == 1)
+                                else if (gpio.Read(pulsePin) == PinValue.High)
                                 {
-                                    state = 3;
+                                    state = 4;
                                     pulseCounter++;
                                 }
                                 break;
                             }
-                        case 3:
+                        case 4:
                             {
-                                if ((int)gpio.Read(indexPin) == 1)
+                                if (gpio.Read(indexPin) == PinValue.High)
                                 {
                                     EndCycleWithIndex();
                                 }
-                                else if ((int)gpio.Read(BlackboxPin) == 1)
+                                else if (gpio.Read(BlackboxPin) == PinValue.Low)
                                 {
                                     EndCycleWithBlackbox();
                                 }
-                                else if ((int)gpio.Read(pulsePin) == 0)
+                                else if (gpio.Read(pulsePin) == PinValue.Low)
                                 {
-                                    state = 2;
+                                    state = 3;
+                                }
+                                break;
+                            }
+                        case 5: //case 5 and 6 get how many pulse we have between blackbox and next index
+                            {
+                                if (gpio.Read(indexPin) == PinValue.High)
+                                {
+                                    EndCycleOfIndex();
+                                }
+                                else if (gpio.Read(pulsePin) == PinValue.High)
+                                {
+                                    pulseCounter++;
+                                    state = 6;
+                                }
+                                break;
+                            }
+                        case 6:
+                            {
+                                if (gpio.Read(indexPin) == PinValue.High)
+                                {
+                                    EndCycleOfIndex();
+                                }
+                                else if (gpio.Read(pulsePin) == PinValue.Low)
+                                {
+                                    state = 5;
                                 }
                                 break;
                             }
                     }
-                }
-                sw.WriteLine($"SimulationEndedAt = {DateTime.Now:yyyyMMdd_HH:mm:ss}");
-                sw.Close();
-                Console.WriteLine($"Test #{i} terminé");
+                    #endregion
 
-                void EndCycleWithIndex()
-                {
-                    state = 1;
-                    cycleCounter++;
-                    Console.WriteLine($"Index : {cycleCounter} | pulse : {pulseCounter}");
-                    sw.WriteLineAsync($"{cycleCounter}, {pulseCounter}, 1, 0");
-                    pulseCounter = 0;
-                }
+                    //function called too many time to get save(sw.Fluch();) each time 
+                    void EndCycleWithIndex()
+                    {
+                        indexCounter++;
+                        sw.WriteLine($"1, 0, {indexCounter}, {pulseCounter}, {direction}");
+                        pulseCounter = 0;
+                        state = 2;
+                    }
 
-                void EndCycleWithBlackbox()
-                {
-                    state = 1;
-                    cycleCounter++;
-                    Console.WriteLine($"Index : {cycleCounter} | pulse : {pulseCounter}");
-                    sw.WriteLineAsync($"{cycleCounter}, {pulseCounter}, 0, 1");
-                    pulseCounter = 0;
+                    void EndCycleWithBlackbox()
+                    {
+                        indexCounter++;
+                        Console.WriteLine($"Index : {indexCounter} | pulse : {pulseCounter} | direction : {direction}");
+                        sw.WriteLine($"0, 1, {indexCounter}, {pulseCounter}, {direction}");
+                        pulseCounter = 0;
+                        state = 5;
+                    }
+
+                    void EndCycleOfIndex()
+                    {
+                        sw.WriteLine($"1, 0, {indexCounter}, {pulseCounter}, {direction}");
+                        sw.Flush();
+                        pulseCounter = 0;
+                        indexCounter = 0;
+                        state = 0;
+                    }
                 }
             }
-            Console.WriteLine("Simulation terminé");
+
+            void Debug()
+            {
+
+                int index = 99;
+                int pulse = 99;
+                int limitClose = 99;
+                int limitOpen = 99;
+                int blackBox = 99;
+                int i = 1;
+                while (true)
+                {
+                    limitOpen = (int)gpio.Read(LimitOpen);
+                    limitClose = (int)gpio.Read(LimitClose);
+                    index = (int)gpio.Read(indexPin);
+                    blackBox = (int)gpio.Read(BlackboxPin);
+                    pulse = (int)gpio.Read(pulsePin);
+                    
+                    Console.WriteLine($"s={state},i={index},p={pulse},b={blackBox},lc={limitClose},lo={limitOpen},{i}");
+                    if (i >= 360)
+                    {
+                        i = 1;
+                    }
+                    else
+                    {
+                        i++;
+                    }
+                    Thread.Sleep(100);
+                }
+            }
         }
     }
 }

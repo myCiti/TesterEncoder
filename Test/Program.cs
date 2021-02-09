@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace Test
 {
@@ -26,7 +27,10 @@ namespace Test
             }
             Console.WriteLine($"Le nombre de fichiers à été défini à : {nbrFichiers}");
 
-            Console.WriteLine($"Le programme va éxécuter {nbrCycles} de cycles dans {nbrFichiers} de fichiers.");
+            Console.WriteLine($"Le programme va éxécuter {nbrCycles} de cycles dans {nbrFichiers} fichiers.");
+
+
+            Thread.Sleep(10_000);
         }
     }
 }
