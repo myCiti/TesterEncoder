@@ -34,15 +34,19 @@ namespace Indexa
             }
             //creating a file and saving his name in "date" variable
             DateTime date;
-            StreamWriter sw = new StreamWriter($"{path}/ResultOfSimulation_{date = DateTime.Now:yyyyMMdd_HHmmss}.csv");
+            StreamWriter swR = new StreamWriter($"{path}/ResultOfSimulation_{date = DateTime.Now:yyyyMMdd_HHmmss}.csv");
+            StreamWriter swDA = new StreamWriter($"{path}/ResultOfSimulation_DeepAnalysis_{date = DateTime.Now:yyyyMMdd_HHmmss}.csv");
             //writing to the file the start of the test
-            sw.WriteLine($"SimulationStartAt = {date}");
+            swDA.WriteLine($"SimulationStartAt = {date}");
+            swR.WriteLine($"SimulationStartAt = {date}");
             //writing legend to know in each column what variable we saved  
-            sw.WriteLine("EachLineIsComposedOf:\nStopByIndex, StopByBlackBox, IndexCounter, PulseCounter, Direction");
+            swDA.WriteLine("EachLineIsComposedOf:\nStopByIndex, StopByBlackBox, IndexCounter, PulseCounter, Direction");
+            swR.WriteLine("EachLineIsComposedOf:\nPulseCounter, TotalPulseCounter, Direction");
             //declaration of the variable for the state machine and logic
             int indexCounter = 0;
             int pulseCounter = 0;
             char direction = ' ';
+            int totalPulseCounter = 0;
             int state = 0;
             #endregion
 
@@ -63,8 +67,10 @@ namespace Indexa
                 Console.WriteLine("Écrire 'stop' pour arrêter le programme");
             }
             //telling when the test ended and closing file
-            sw.WriteLine($"SimulationTestEndedAt = {DateTime.Now:yyyyMMdd_HHmmss}");
-            sw.Close();
+            swDA.WriteLine($"SimulationTestEndedAt = {DateTime.Now:yyyyMMdd_HHmmss}");
+            swDA.Close();
+            swR.WriteLine($"SimulationTestEndedAt = {DateTime.Now:yyyyMMdd_HHmmss}");
+            swR.Close();
             //closing program
             return 0;
 
@@ -121,6 +127,7 @@ namespace Indexa
                                 {
                                     state = 4;
                                     pulseCounter++;
+                                    totalPulseCounter++;
                                 }
                                 break;
                             }
@@ -149,6 +156,7 @@ namespace Indexa
                                 else if (gpio.Read(pulsePin) == PinValue.High)
                                 {
                                     pulseCounter++;
+                                    totalPulseCounter++;
                                     state = 6;
                                 }
                                 break;
@@ -172,7 +180,7 @@ namespace Indexa
                     void EndCycleWithIndex()
                     {
                         indexCounter++;
-                        sw.WriteLine($"1, 0, {indexCounter}, {pulseCounter}, {direction}");
+                        swDA.WriteLine($"1, 0, {indexCounter}, {pulseCounter}, {direction}");
                         pulseCounter = 0;
                         state = 2;
                     }
@@ -181,16 +189,20 @@ namespace Indexa
                     {
                         indexCounter++;
                         Console.WriteLine($"Index : {indexCounter} | pulse : {pulseCounter} | direction : {direction}");
-                        sw.WriteLine($"0, 1, {indexCounter}, {pulseCounter}, {direction}");
+                        swDA.WriteLine($"0, 1, {indexCounter}, {pulseCounter}, {direction}");
+                        swR.WriteLine($"{totalPulseCounter}");
                         pulseCounter = 0;
                         state = 5;
                     }
 
                     void EndCycleOfIndex()
                     {
-                        sw.WriteLine($"1, 0, {indexCounter}, {pulseCounter}, {direction}");
-                        sw.Flush();
+                        swDA.WriteLine($"1, 0, {indexCounter}, {pulseCounter}, {direction}");
+                        swR.Write($", {totalPulseCounter}, {direction}");
+                        swDA.Flush();
+                        swR.Flush();
                         pulseCounter = 0;
+                        totalPulseCounter = 0;
                         indexCounter = 0;
                         state = 0;
                     }
@@ -199,7 +211,6 @@ namespace Indexa
 
             void Debug()
             {
-
                 int index = 99;
                 int pulse = 99;
                 int limitClose = 99;
