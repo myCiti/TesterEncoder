@@ -190,8 +190,8 @@ namespace Indexa
                     {
                         indexCounter++;
                         Console.WriteLine($"Index : {indexCounter} | pulse : {pulseCounter} | direction : {direction}");
-                        swDA.WriteLine($"0, 1, {indexCounter}, {pulseCounter}, {direction}");
-                        swR.Write($"{totalPulseCounter}");
+                        swDA.WriteLineAsync($"0, 1, {indexCounter}, {pulseCounter}, {direction}");
+                        swR.WriteAsync($"{totalPulseCounter}");
                         pulseCounter = 0;
                         state = 5;
                     }
