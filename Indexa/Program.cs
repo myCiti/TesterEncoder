@@ -18,9 +18,9 @@ namespace Indexa
             gpio.OpenPin(pulsePin, PinMode.Input);
             const int BlackboxPin = 27;
             gpio.OpenPin(BlackboxPin, PinMode.Input);
-            const int LimitOpen = 3;
+            const int LimitOpen = 5;
             gpio.OpenPin(LimitOpen, PinMode.Input);
-            const int LimitClose = 2;
+            const int LimitClose = 22;
             gpio.OpenPin(LimitClose, PinMode.Input);
 
             //start program
