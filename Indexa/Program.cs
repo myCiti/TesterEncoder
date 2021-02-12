@@ -42,6 +42,7 @@ namespace Indexa
             //writing legend to know in each column what variable we saved  
             swDA.WriteLine("EachLineIsComposedOf:\nStopByIndex, StopByBlackBox, IndexCounter, PulseCounter, Direction");
             swR.WriteLine("EachLineIsComposedOf:\nPulseCounter, TotalPulseCounter, Direction");
+            swR.WriteLine();
             //declaration of the variable for the state machine and logic
             int indexCounter = 0;
             int pulseCounter = 0;
