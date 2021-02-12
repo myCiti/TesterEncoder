@@ -83,13 +83,13 @@ namespace Indexa
                     {
                         case 0: //waiting for one of two limit to get on to start cycle
                             {
-                                if (gpio.Read(LimitOpen) == PinValue.Low)
+                                if (gpio.Read(LimitOpen) == PinValue.High)
                                 {
                                     direction = 'v';
                                     Console.WriteLine("Cycle d'ouverture débuté");
                                     state = 1;
                                 }
-                                else if (gpio.Read(LimitClose) == PinValue.Low)
+                                else if (gpio.Read(LimitClose) == PinValue.High)
                                 {
                                     direction = '^';
                                     Console.WriteLine("Cycle de fermeture débuté");
@@ -119,7 +119,7 @@ namespace Indexa
                                 {
                                     EndCycleWithIndex();
                                 }
-                                else if (gpio.Read(BlackboxPin) == PinValue.Low)
+                                else if (gpio.Read(BlackboxPin) == PinValue.High)
                                 {
                                     EndCycleWithBlackbox();
                                 }
@@ -137,7 +137,7 @@ namespace Indexa
                                 {
                                     EndCycleWithIndex();
                                 }
-                                else if (gpio.Read(BlackboxPin) == PinValue.Low)
+                                else if (gpio.Read(BlackboxPin) == PinValue.High)
                                 {
                                     EndCycleWithBlackbox();
                                 }
