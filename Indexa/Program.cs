@@ -12,15 +12,15 @@ namespace Indexa
         {
             //GPIO
             var gpio = new GpioController();
-            const int indexPin = 4;
+            const int indexPin = 13;
             gpio.OpenPin(indexPin, PinMode.Input);
-            const int pulsePin = 17;
+            const int pulsePin = 19;
             gpio.OpenPin(pulsePin, PinMode.Input);
-            const int BlackboxPin = 27;
+            const int BlackboxPin = 26;
             gpio.OpenPin(BlackboxPin, PinMode.Input);
-            const int LimitOpen = 5;
+            const int LimitOpen = 6;
             gpio.OpenPin(LimitOpen, PinMode.Input);
-            const int LimitClose = 22;
+            const int LimitClose = 5;
             gpio.OpenPin(LimitClose, PinMode.Input);
 
             //start program
