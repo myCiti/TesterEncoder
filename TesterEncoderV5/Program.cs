@@ -4,7 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Indexa
+namespace TesterEncoderV5
 {
     class Program
     {
@@ -18,10 +18,10 @@ namespace Indexa
             gpio.OpenPin(pulsePin, PinMode.Input);
             const int BlackboxPin = 16;
             gpio.OpenPin(BlackboxPin, PinMode.Input);
-            const int LimitOpen = 6;
-            gpio.OpenPin(LimitOpen, PinMode.Input);
-            const int LimitClose = 5;
-            gpio.OpenPin(LimitClose, PinMode.Input);
+            const int Open = 6;
+            gpio.OpenPin(Open, PinMode.Input);
+            const int Close = 5;
+            gpio.OpenPin(Close, PinMode.Input);
 
             //start program
             #region startup
@@ -49,14 +49,17 @@ namespace Indexa
             char direction = ' ';
             int totalPulseCounter = 0;
             int state = 0;
+
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            double time = watch.Elapsed.TotalMilliseconds;
             #endregion
 
             //start a new task to get logic working infinitely without freezing the ui
             Task task = new Task(() => Logic());
             task.Start();
             
-            /*
-            Task task2 = new Task(() => Debug());
+            
+            /*Task task2 = new Task(() => Debug2());
             task2.Start();*/
 
             //stoping message
@@ -84,15 +87,15 @@ namespace Indexa
                     {
                         case 0: //waiting for one of two limit to get on to start cycle
                             {
-                                if (gpio.Read(LimitOpen) == PinValue.High)
+                                if (gpio.Read(Open) == PinValue.High)
                                 {
-                                    direction = 'v';
+                                    direction = '^';
                                     Console.WriteLine("Cycle d'ouverture débuté");
                                     state = 1;
                                 }
-                                else if (gpio.Read(LimitClose) == PinValue.High)
+                                else if (gpio.Read(Close) == PinValue.High)
                                 {
-                                    direction = '^';
+                                    direction = 'v';
                                     Console.WriteLine("Cycle de fermeture débuté");
                                     state = 1;
                                 }
@@ -103,6 +106,7 @@ namespace Indexa
                                 if (gpio.Read(indexPin) == PinValue.High)
                                 {
                                     state = 2;
+                                    ElapsedTimeHighIndex();
                                 }
                                 break;
                             }
@@ -119,6 +123,7 @@ namespace Indexa
                                 if (gpio.Read(indexPin) == PinValue.High)
                                 {
                                     EndCycleWithIndex();
+                                    ElapsedTimeHighIndex();
                                 }
                                 else if (gpio.Read(BlackboxPin) == PinValue.High)
                                 {
@@ -137,6 +142,7 @@ namespace Indexa
                                 if (gpio.Read(indexPin) == PinValue.High)
                                 {
                                     EndCycleWithIndex();
+                                    ElapsedTimeHighIndex();
                                 }
                                 else if (gpio.Read(BlackboxPin) == PinValue.High)
                                 {
@@ -153,6 +159,7 @@ namespace Indexa
                                 if (gpio.Read(indexPin) == PinValue.High)
                                 {
                                     EndCycleOfIndex();
+                                    ElapsedTimeHighIndex();
                                 }
                                 else if (gpio.Read(pulsePin) == PinValue.High)
                                 {
@@ -167,6 +174,7 @@ namespace Indexa
                                 if (gpio.Read(indexPin) == PinValue.High)
                                 {
                                     EndCycleOfIndex();
+                                    ElapsedTimeHighIndex();
                                 }
                                 else if (gpio.Read(pulsePin) == PinValue.Low)
                                 {
@@ -181,6 +189,7 @@ namespace Indexa
                     void EndCycleWithIndex()
                     {
                         indexCounter++;
+                        Console.WriteLine($"Index : {indexCounter} | pulse : {pulseCounter} | direction : {direction}");
                         swDA.WriteLine($"1, 0, {indexCounter}, {pulseCounter}, {direction}");
                         pulseCounter = 0;
                         state = 2;
@@ -199,6 +208,7 @@ namespace Indexa
                     void EndCycleOfIndex()
                     {
                         swDA.WriteLine($"1, 0, {indexCounter}, {pulseCounter}, {direction}");
+                        Console.WriteLine($"Index : {indexCounter} | pulse : {pulseCounter} | direction : {direction}");
                         swR.Write($", {totalPulseCounter}, {direction}");
                         swDA.Flush();
                         swR.Flush();
@@ -208,11 +218,25 @@ namespace Indexa
                         indexCounter = 0;
                         state = 0;
                     }
+
+                    void ElapsedTimeHighIndex()
+                    {
+                        time = watch.Elapsed.TotalMilliseconds;
+                        while (true)
+                        {
+                            if ((int)gpio.Read(indexPin) == PinValue.Low)
+                            {
+                                Console.WriteLine($"temps de l'index à la valeur haute : {(watch.Elapsed.TotalMilliseconds - time):F6} ms");
+                                return;
+                            }
+                        }
+                    }
                 }
             }
 
             void Debug()
             {
+                Console.WriteLine($"test");
                 int index = 99;
                 int pulse = 99;
                 int limitClose = 99;
@@ -221,8 +245,8 @@ namespace Indexa
                 int i = 1;
                 while (true)
                 {
-                    limitOpen = (int)gpio.Read(LimitOpen);
-                    limitClose = (int)gpio.Read(LimitClose);
+                    limitOpen = (int)gpio.Read(Open);
+                    limitClose = (int)gpio.Read(Close);
                     index = (int)gpio.Read(indexPin);
                     blackBox = (int)gpio.Read(BlackboxPin);
                     pulse = (int)gpio.Read(pulsePin);
@@ -237,6 +261,29 @@ namespace Indexa
                         i++;
                     }
                     Thread.Sleep(100);
+                }
+            }
+
+            void Debug2()
+            {
+                int i = 0;
+                bool ni = false;
+
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                double time = watch.Elapsed.TotalMilliseconds;
+
+                while (true)
+                {
+                    if ((int)gpio.Read(indexPin) == PinValue.High && ni != true)
+                    {
+                        time = watch.Elapsed.TotalMilliseconds;
+                        ni = true;
+                    }
+                    if ((int)gpio.Read(indexPin) == PinValue.Low && ni != false)
+                    {
+                        Console.WriteLine($"temps de l'index à la valeur haute : {(watch.Elapsed.TotalMilliseconds - time):F6} ms");
+                        ni = false;
+                    }
                 }
             }
         }
