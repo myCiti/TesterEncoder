@@ -107,7 +107,7 @@ namespace TesterEncoderV5
                                 if (gpio.Read(indexPin) == PinValue.High)
                                 {
                                     state = 2;
-                                    ElapsedTimeHighIndex();
+                                    //ElapsedTimeHighIndex();
                                 }
                                 break;
                             }
@@ -123,7 +123,7 @@ namespace TesterEncoderV5
                             {
                                 if (gpio.Read(indexPin) == PinValue.High)
                                 {
-                                    ElapsedTimeHighIndex();
+                                    //ElapsedTimeHighIndex();
                                     EndCycleWithIndex();
                                 }
                                 else if (gpio.Read(BlackboxPin) == PinValue.High)
@@ -142,7 +142,7 @@ namespace TesterEncoderV5
                             {
                                 if (gpio.Read(indexPin) == PinValue.High)
                                 {
-                                    ElapsedTimeHighIndex();
+                                    //ElapsedTimeHighIndex();
                                     EndCycleWithIndex();
                                 }
                                 else if (gpio.Read(BlackboxPin) == PinValue.High)
@@ -159,7 +159,7 @@ namespace TesterEncoderV5
                             {
                                 if (gpio.Read(indexPin) == PinValue.High)
                                 {
-                                    ElapsedTimeHighIndex();
+                                    //ElapsedTimeHighIndex();
                                     EndCycleOfIndex();
                                 }
                                 else if (gpio.Read(pulsePin) == PinValue.High)
@@ -174,7 +174,7 @@ namespace TesterEncoderV5
                             {
                                 if (gpio.Read(indexPin) == PinValue.High)
                                 {
-                                    ElapsedTimeHighIndex();
+                                    //ElapsedTimeHighIndex();
                                     EndCycleOfIndex();
                                 }
                                 else if (gpio.Read(pulsePin) == PinValue.Low)
@@ -190,7 +190,7 @@ namespace TesterEncoderV5
                     void EndCycleWithIndex()
                     {
                         indexCounter++;
-                        Console.WriteLine($"Index : {indexCounter} | pulse : {pulseCounter} | direction : {direction} | index H : {time:F4} ms");
+                        Console.WriteLine($"Index : {indexCounter} | pulse : {pulseCounter} | direction : {direction}");
                         swDA.WriteLine($"1,0,{indexCounter},{pulseCounter},{direction}");
                         pulseCounter = 0;
                         state = 2;
@@ -200,7 +200,7 @@ namespace TesterEncoderV5
                     {
                         indexCounter++;
                         cycleCounter++;
-                        Console.WriteLine($"Index : {indexCounter} | pulse : {pulseCounter} | direction : {direction} | index H : {time:F4} ms");
+                        Console.WriteLine($"Index : {indexCounter} | pulse : {pulseCounter} | direction : {direction}");
                         swDA.WriteLineAsync($"0,1,{indexCounter},{pulseCounter},{direction}");
                         swR.WriteAsync($"{totalPulseCounter}");
                         pulseCounter = 0;
@@ -210,7 +210,7 @@ namespace TesterEncoderV5
                     void EndCycleOfIndex()
                     {
                         swDA.WriteLine($"1,0,{indexCounter},{pulseCounter},{direction}");
-                        Console.WriteLine($"Index : {indexCounter} | pulse : {pulseCounter} | direction : {direction} | index H : {time:F4} ms");
+                        Console.WriteLine($"Index : {indexCounter} | pulse : {pulseCounter} | direction : {direction}");
                         swR.Write($",{totalPulseCounter},{direction}");
                         swDA.Flush();
                         swR.Flush();
@@ -221,7 +221,7 @@ namespace TesterEncoderV5
                         state = 0;
                     }
                     
-                    void ElapsedTimeHighIndex()
+                    /*void ElapsedTimeHighIndex()
                     {
                         time = watch.Elapsed.TotalMilliseconds;
                         while (true)
@@ -238,7 +238,7 @@ namespace TesterEncoderV5
                                 return;
                             }
                         }
-                    }
+                    }*/
 
                 }
             }
