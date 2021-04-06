@@ -18,9 +18,9 @@ namespace TesterEncoderV5
             gpio.OpenPin(pulsePin, PinMode.Input);
             const int BlackboxPin = 16;
             gpio.OpenPin(BlackboxPin, PinMode.Input);
-            const int Open = 6;
+            const int Open = 5;
             gpio.OpenPin(Open, PinMode.Input);
-            const int Close = 5;
+            const int Close = 6;
             gpio.OpenPin(Close, PinMode.Input);
 
             //start program
@@ -34,14 +34,14 @@ namespace TesterEncoderV5
             }
             //creating a file and saving his name in "date" variable
             DateTime date;
-            StreamWriter swR = new StreamWriter($"{path}/ResultOfSimulation_{date = DateTime.Now:yyyyMMdd_HHmmss}.csv");
-            StreamWriter swDA = new StreamWriter($"{path}/ResultOfSimulation_DeepAnalysis_{date = DateTime.Now:yyyyMMdd_HHmmss}.csv");
+            StreamWriter swR = new StreamWriter($"{path}/Data_TestEncoder_{date = DateTime.Now:yyyyMMdd_HHmmss}.csv");
+            StreamWriter swDA = new StreamWriter($"{path}/Data_TestEncoder_DeepAnalysis_{date = DateTime.Now:yyyyMMdd_HHmmss}.csv");
             //writing to the file the start of the test
-            swDA.WriteLine($"SimulationStartAt = {date}");
-            swR.WriteLine($"SimulationStartAt = {date}");
+            swDA.WriteLine($"StartAt = {date}");
+            swR.WriteLine($"StartAt = {date}");
             //writing legend to know in each column what variable we saved  
-            swDA.WriteLine("EachLineIsComposedOf:\nStopByIndex, StopByBlackBox, IndexCounter, PulseCounter, Direction");
-            swR.WriteLine("EachLineIsComposedOf:\nPulseCounter, TotalPulseCounter, Direction");
+            swDA.WriteLine("Index,Stop,IndexCounter,PulseCounter,Direction");
+            swR.WriteLine("PulseCounter,TotalPulseCounter,Direction");
             swR.WriteLine();
             //declaration of the variable for the state machine and logic
             int indexCounter = 0;
@@ -71,9 +71,9 @@ namespace TesterEncoderV5
                 Console.WriteLine("Écrire 'stop' pour arrêter le programme");
             }
             //telling when the test ended and closing file
-            swDA.WriteLine($"SimulationTestEndedAt = {DateTime.Now:yyyyMMdd_HHmmss}");
+            swDA.WriteLine($"TestEndedAt = {DateTime.Now:yyyyMMdd_HHmmss}");
             swDA.Close();
-            swR.WriteLine($"SimulationTestEndedAt = {DateTime.Now:yyyyMMdd_HHmmss}");
+            swR.WriteLine($"TestEndedAt = {DateTime.Now:yyyyMMdd_HHmmss}");
             swR.Close();
             //closing program
             return 0;
@@ -122,8 +122,8 @@ namespace TesterEncoderV5
                             {
                                 if (gpio.Read(indexPin) == PinValue.High)
                                 {
-                                    EndCycleWithIndex();
                                     ElapsedTimeHighIndex();
+                                    EndCycleWithIndex();
                                 }
                                 else if (gpio.Read(BlackboxPin) == PinValue.High)
                                 {
@@ -141,8 +141,8 @@ namespace TesterEncoderV5
                             {
                                 if (gpio.Read(indexPin) == PinValue.High)
                                 {
-                                    EndCycleWithIndex();
                                     ElapsedTimeHighIndex();
+                                    EndCycleWithIndex();
                                 }
                                 else if (gpio.Read(BlackboxPin) == PinValue.High)
                                 {
@@ -158,8 +158,8 @@ namespace TesterEncoderV5
                             {
                                 if (gpio.Read(indexPin) == PinValue.High)
                                 {
-                                    EndCycleOfIndex();
                                     ElapsedTimeHighIndex();
+                                    EndCycleOfIndex();
                                 }
                                 else if (gpio.Read(pulsePin) == PinValue.High)
                                 {
@@ -173,8 +173,8 @@ namespace TesterEncoderV5
                             {
                                 if (gpio.Read(indexPin) == PinValue.High)
                                 {
-                                    EndCycleOfIndex();
                                     ElapsedTimeHighIndex();
+                                    EndCycleOfIndex();
                                 }
                                 else if (gpio.Read(pulsePin) == PinValue.Low)
                                 {
@@ -189,8 +189,8 @@ namespace TesterEncoderV5
                     void EndCycleWithIndex()
                     {
                         indexCounter++;
-                        Console.WriteLine($"Index : {indexCounter} | pulse : {pulseCounter} | direction : {direction}");
-                        swDA.WriteLine($"1, 0, {indexCounter}, {pulseCounter}, {direction}");
+                        Console.WriteLine($"Index : {indexCounter} | pulse : {pulseCounter} | direction : {direction} | index H : {time:F4} ms");
+                        swDA.WriteLine($"1,0,{indexCounter},{pulseCounter},{direction}");
                         pulseCounter = 0;
                         state = 2;
                     }
@@ -198,8 +198,8 @@ namespace TesterEncoderV5
                     void EndCycleWithBlackbox()
                     {
                         indexCounter++;
-                        Console.WriteLine($"Index : {indexCounter} | pulse : {pulseCounter} | direction : {direction}");
-                        swDA.WriteLineAsync($"0, 1, {indexCounter}, {pulseCounter}, {direction}");
+                        Console.WriteLine($"Index : {indexCounter} | pulse : {pulseCounter} | direction : {direction} | index H : {time:F4} ms");
+                        swDA.WriteLineAsync($"0,1,{indexCounter},{pulseCounter},{direction}");
                         swR.WriteAsync($"{totalPulseCounter}");
                         pulseCounter = 0;
                         state = 5;
@@ -207,9 +207,9 @@ namespace TesterEncoderV5
 
                     void EndCycleOfIndex()
                     {
-                        swDA.WriteLine($"1, 0, {indexCounter}, {pulseCounter}, {direction}");
-                        Console.WriteLine($"Index : {indexCounter} | pulse : {pulseCounter} | direction : {direction}");
-                        swR.Write($", {totalPulseCounter}, {direction}");
+                        swDA.WriteLine($"1,0,{indexCounter},{pulseCounter},{direction}");
+                        Console.WriteLine($"Index : {indexCounter} | pulse : {pulseCounter} | direction : {direction} | index H : {time:F4} ms");
+                        swR.Write($",{totalPulseCounter},{direction}");
                         swDA.Flush();
                         swR.Flush();
                         swR.WriteLine();
@@ -218,7 +218,7 @@ namespace TesterEncoderV5
                         indexCounter = 0;
                         state = 0;
                     }
-
+                    
                     void ElapsedTimeHighIndex()
                     {
                         time = watch.Elapsed.TotalMilliseconds;
@@ -226,11 +226,18 @@ namespace TesterEncoderV5
                         {
                             if ((int)gpio.Read(indexPin) == PinValue.Low)
                             {
-                                Console.WriteLine($"temps de l'index à la valeur haute : {(watch.Elapsed.TotalMilliseconds - time):F6} ms");
+                                time = watch.Elapsed.TotalMilliseconds - time;
+                                return;
+                            }
+                            else if ((watch.Elapsed.TotalMilliseconds - time) >= 0.05)
+                            {
+                                Console.WriteLine($"temps de l'index à la valeur haute trop long, plus grand que 0,05 ms");
+                                swDA.WriteLine($"2,0,{indexCounter},{pulseCounter},{direction}, temps de l'index à la valeur haute trop long, plus grand que 0,05 ms");
                                 return;
                             }
                         }
                     }
+
                 }
             }
 
@@ -266,7 +273,6 @@ namespace TesterEncoderV5
 
             void Debug2()
             {
-                int i = 0;
                 bool ni = false;
 
                 var watch = System.Diagnostics.Stopwatch.StartNew();
