@@ -50,6 +50,7 @@ namespace TesterEncoderV5
             int totalPulseCounter = 0;
             int state = 0;
 
+            int cycleCounter = 0;
             var watch = System.Diagnostics.Stopwatch.StartNew();
             double time = watch.Elapsed.TotalMilliseconds;
             #endregion
@@ -90,13 +91,13 @@ namespace TesterEncoderV5
                                 if (gpio.Read(Open) == PinValue.High)
                                 {
                                     direction = '^';
-                                    Console.WriteLine("Cycle d'ouverture débuté");
+                                    Console.WriteLine($"#{cycleCounter} : Cycle d'ouverture débuté");
                                     state = 1;
                                 }
                                 else if (gpio.Read(Close) == PinValue.High)
                                 {
                                     direction = 'v';
-                                    Console.WriteLine("Cycle de fermeture débuté");
+                                    Console.WriteLine($"#{cycleCounter} : Cycle de fermeture débuté");
                                     state = 1;
                                 }
                                 break;
@@ -198,6 +199,7 @@ namespace TesterEncoderV5
                     void EndCycleWithBlackbox()
                     {
                         indexCounter++;
+                        cycleCounter++;
                         Console.WriteLine($"Index : {indexCounter} | pulse : {pulseCounter} | direction : {direction} | index H : {time:F4} ms");
                         swDA.WriteLineAsync($"0,1,{indexCounter},{pulseCounter},{direction}");
                         swR.WriteAsync($"{totalPulseCounter}");
