@@ -40,7 +40,7 @@ namespace TesterEncoderV5
             swDA.WriteLine($"StartAt = {date}");
             swR.WriteLine($"StartAt = {date}");
             //writing legend to know in each column what variable we saved  
-            swDA.WriteLine("Index,Stop,IndexCounter,PulseCounter,Direction");
+            swDA.WriteLine("Index,Stop,IndexCounter,PulseCounter,Direction,ElaspedTime,AbsoluteTime");
             swR.WriteLine("PulseCounter,TotalPulseCounter,Direction");
             swR.WriteLine();
             //declaration of the variable for the state machine and logic
@@ -191,7 +191,8 @@ namespace TesterEncoderV5
                     {
                         indexCounter++;
                         Console.WriteLine($"Index : {indexCounter} | pulse : {pulseCounter} | direction : {direction}");
-                        swDA.WriteLine($"1,0,{indexCounter},{pulseCounter},{direction}");
+                        swDA.WriteLine($"1,0,{indexCounter},{pulseCounter},{direction},{watch.Elapsed.TotalMilliseconds - time},{DateTime.Now:yyyyMMdd_HHmmss}");
+                        time = watch.Elapsed.TotalMilliseconds;
                         pulseCounter = 0;
                         state = 2;
                     }
@@ -201,7 +202,8 @@ namespace TesterEncoderV5
                         indexCounter++;
                         cycleCounter++;
                         Console.WriteLine($"Index : {indexCounter} | pulse : {pulseCounter} | direction : {direction}");
-                        swDA.WriteLineAsync($"0,1,{indexCounter},{pulseCounter},{direction}");
+                        swDA.WriteLineAsync($"0,1,{indexCounter},{pulseCounter},{direction},{watch.Elapsed.TotalMilliseconds - time},{DateTime.Now:yyyyMMdd_HHmmss}");
+                        time = watch.Elapsed.TotalMilliseconds;
                         swR.WriteAsync($"{totalPulseCounter}");
                         pulseCounter = 0;
                         state = 5;
@@ -209,7 +211,8 @@ namespace TesterEncoderV5
 
                     void EndCycleOfIndex()
                     {
-                        swDA.WriteLine($"1,0,{indexCounter},{pulseCounter},{direction}");
+                        swDA.WriteLine($"1,0,{indexCounter},{pulseCounter},{direction},{watch.Elapsed.TotalMilliseconds - time},{DateTime.Now:yyyyMMdd_HHmmss}");
+                        time = watch.Elapsed.TotalMilliseconds;
                         Console.WriteLine($"Index : {indexCounter} | pulse : {pulseCounter} | direction : {direction}");
                         swR.Write($",{totalPulseCounter},{direction}");
                         swDA.Flush();
