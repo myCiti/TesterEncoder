@@ -64,12 +64,12 @@ namespace TesterEncoderV5
             task2.Start();*/
 
             //stoping message
-            Console.WriteLine("Écrire 'stop' pour arrêter le programme");
+            Console.WriteLine("Écrire 'st' pour arrêter le programme");
             //while to ask if the user doesn't write stop 
-            while (Console.ReadLine() != "stop")
+            while (Console.ReadLine() != "st")
             {
                 Console.WriteLine("Commande inconnue");
-                Console.WriteLine("Écrire 'stop' pour arrêter le programme");
+                Console.WriteLine("Écrire 'st' pour arrêter le programme");
             }
             //telling when the test ended and closing file
             swDA.WriteLine($"TestEndedAt = {DateTime.Now:yyyyMMdd_HHmmss}");
