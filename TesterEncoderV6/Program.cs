@@ -64,12 +64,15 @@ namespace TesterEncoderV5
             task2.Start();*/
 
             //stoping message
-            Console.WriteLine("Écrire 'st' pour arrêter le programme");
+            Console.WriteLine("Écrire 'st' ou 'stop' pour arrêter le programme");
             //while to ask if the user doesn't write stop 
-            while (Console.ReadLine() != "st")
+            string readLine = null;
+            while (readLine.Equals("st", StringComparison.InvariantCultureIgnoreCase) ||
+                   readLine.Equals("stop", StringComparison.InvariantCultureIgnoreCase))
             {
                 Console.WriteLine("Commande inconnue");
-                Console.WriteLine("Écrire 'st' pour arrêter le programme");
+                Console.WriteLine("Écrire 'st' ou 'stop' pour arrêter le programme");
+                readLine = Console.ReadLine();
             }
             //telling when the test ended and closing file
             swDA.WriteLine($"TestEndedAt = {DateTime.Now:yyyyMMdd_HHmmss}");
@@ -90,15 +93,41 @@ namespace TesterEncoderV5
                             {
                                 if (gpio.Read(Open) == PinValue.High)
                                 {
-                                    direction = '^';
-                                    Console.WriteLine($"#{cycleCounter} : Cycle d'ouverture débuté");
-                                    state = 1;
+                                    if (direction == 'v')
+                                    {
+                                        direction = '^';
+                                        Console.WriteLine($"#{cycleCounter} : Cycle d'ouverture débuté");
+                                        state = 1;
+                                    }
+                                    else if (direction == ' ')
+                                    {
+                                        direction = '^';
+                                        Console.WriteLine($"#{cycleCounter} : Cycle d'ouverture débuté");
+                                        state = 1;
+                                    }
+                                    else
+                                    {
+                                        swDA.Write($",Erreur de direction : son signe est : '{direction}'");
+                                    }
                                 }
                                 else if (gpio.Read(Close) == PinValue.High)
                                 {
-                                    direction = 'v';
-                                    Console.WriteLine($"#{cycleCounter} : Cycle de fermeture débuté");
-                                    state = 1;
+                                    if (direction == '^')
+                                    {
+                                        direction = 'v';
+                                        Console.WriteLine($"#{cycleCounter} : Cycle de fermeture débuté");
+                                        state = 1;
+                                    }
+                                    else if (direction == ' ')
+                                    {
+                                        direction = 'v';
+                                        Console.WriteLine($"#{cycleCounter} : Cycle de fermeture débuté");
+                                        state = 1;
+                                    }
+                                    else
+                                    {
+                                        swDA.Write($",Erreur de direction : son signe est : '{direction}'");
+                                    }
                                 }
                                 break;
                             }
