@@ -1,6 +1,6 @@
-# TesterEncoderV6
+# TesterEncoder
 
-# H2 Ce program est développé lors du stage de l'hiver 2021 
+### Ce program est développé lors du stage de l'hiver 2021 par Thomas M.
 
 Ce projet correspond au test de la logique du programme qui sert à tester les encodeurs numériques relatifs face au traditionnel vis sans fin et limite.
 
